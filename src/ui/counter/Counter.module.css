@@ -28,9 +28,12 @@
 }
 .segBtn:active:not(.segOn) { transform: scale(0.98); }
 .segOn { composes: segBtn; color: var(--dl-color-text-display); background: var(--dl-color-surface-solid); box-shadow: var(--dl-stall-card-lift); }
+.tabFull { display: inline; }
+.tabShort { display: none; }
 .badge { font-style: normal; min-width: 1.25rem; height: 1.25rem; padding: 0 0.375rem; border-radius: var(--dl-radius-pill); display: inline-grid; place-items: center; font-size: 0.75rem; font-weight: 700; color: var(--dl-stall-on-cta); background: var(--dl-color-warning); }
 /* Q-ORDERS-2 A: single current-order line with fast cycling across open orders. */
-.cur { padding: 0.25rem 1.25rem 0.625rem; font-size: 0.8125rem; color: var(--dl-color-text-muted); display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem; }
+.cur { padding: 0.25rem 1rem 0.5rem; font-size: 0.8125rem; color: var(--dl-color-text-muted); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.375rem; }
+.curLeft { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem; }
 .cur b { font-size: 0.9375rem; font-weight: 600; color: var(--dl-color-text-display); }
 .orderCycle {
   display: inline-flex; align-items: center; gap: 0.125rem;
@@ -47,6 +50,25 @@
 .cycleDot { color: var(--dl-color-text-faint); font-weight: 600; }
 .cycleTokenBtn { font-size: 0.8125rem; font-weight: 600; color: var(--dl-color-text-muted); padding: 0 0.25rem; border-radius: var(--dl-radius-sm); }
 .curMeta { color: var(--dl-color-text-muted); }
+.orderRibbon {
+  display: flex; align-items: center; gap: 0.25rem; overflow-x: auto;
+  padding: 0.0625rem 0; max-width: 100%;
+  overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
+}
+.ribbonBtn {
+  min-height: 1.625rem; padding: 0 0.5rem; border-radius: var(--dl-radius-pill);
+  display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--dl-color-text-muted);
+  background: color-mix(in srgb, var(--dl-color-surface) 60%, transparent);
+  border: var(--dl-stall-hair) solid var(--dl-color-hairline);
+  user-select: none; touch-action: manipulation;
+}
+.ribbonOn {
+  composes: ribbonBtn;
+  color: var(--dl-color-text-display);
+  background: color-mix(in srgb, var(--dl-color-accent) 20%, transparent);
+  border-color: color-mix(in srgb, var(--dl-color-accent) 60%, transparent);
+}
 .refundNote { margin: 0.5rem 0.25rem 0.875rem; font-size: 0.875rem; color: var(--dl-stall-warn-text); }
 /* P2 s120: Unpaid count (red) and the Drafts pill (s123) beside +. */
 .badgeRed { font-style: normal; margin-left: 0.375rem; font-weight: 600; color: var(--dl-color-danger); } /* s120: Unpaid 3 in red text */
@@ -62,6 +84,14 @@
 .pane { min-width: 0; min-height: 0; display: flex; flex-direction: column; position: relative; container: counter / inline-size; contain: layout; }
 .paneR { composes: pane; border-left: var(--dl-stall-hair) solid var(--dl-color-hairline); }
 .paneHint { margin: auto; padding: 2rem 1.5rem; text-align: center; font-size: 1.0625rem; color: var(--dl-color-text-faint); }
+/* Mobile responsive header tabs (< 26rem / 416px): switch to compact labels to prevent truncation */
+@container counter (max-width: 26rem) {
+  .tabFull { display: none; }
+  .tabShort { display: inline; }
+  .segBtn { font-size: 0.875rem; padding: 0 0.25rem; }
+  .seg { margin: 0 0.5rem; }
+}
+
 /* P2 large text (200 %): the header wraps instead of pushing buttons off screen. */
 @container counter (max-width: 18rem) {
   .hdr, .pages, .hdrTop { flex-wrap: wrap; }

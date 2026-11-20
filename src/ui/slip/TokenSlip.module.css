@@ -4,11 +4,45 @@
 .stall { text-align: center; font-weight: 700; font-size: 3.6mm; }
 .tokLab { margin-top: 2mm; text-align: center; font-size: 2.8mm; letter-spacing: 0.3mm; text-transform: uppercase; }
 .tok { text-align: center; font-size: 16mm; font-weight: 800; line-height: 1; }
+.unpaidBadge {
+  margin: 2mm 0;
+  padding: 1.5mm 1mm;
+  border: 0.6mm solid var(--dl-stall-paper-ink);
+  border-radius: 1mm;
+  text-align: center;
+  background: color-mix(in srgb, var(--dl-stall-paper-ink) 8%, transparent);
+}
+.unpaidTitle {
+  font-size: 4.5mm;
+  font-weight: 900;
+  letter-spacing: 0.5mm;
+  line-height: 1.1;
+}
+.unpaidSub {
+  font-size: 2.6mm;
+  font-weight: 700;
+  margin-top: 0.8mm;
+  letter-spacing: 0.2mm;
+}
 .meta { text-align: center; font-size: 2.8mm; margin-top: 1mm; }
+.paidWarn {
+  composes: meta;
+  font-weight: 800;
+  font-size: 3mm;
+  letter-spacing: 0.2mm;
+  margin-top: 2mm;
+}
 .lines { list-style: none; margin: 3mm 0 0; padding: 2mm 0 0; border-top: 0.3mm dashed var(--dl-stall-paper-ink); }
 .lines li, .total { display: flex; justify-content: space-between; gap: 2mm; }
 .total { margin-top: 2mm; padding-top: 1.5mm; border-top: 0.3mm dashed var(--dl-stall-paper-ink); font-weight: 700; font-size: 3.6mm; }
 .foot { margin-top: 3mm; text-align: center; font-size: 2.8mm; }
+.footWarn {
+  composes: foot;
+  font-weight: 800;
+  letter-spacing: 0.3mm;
+  border-top: 0.3mm dashed var(--dl-stall-paper-ink);
+  padding-top: 1.5mm;
+}
 .close { min-height: var(--dl-hit-comfortable); padding: 0 1.5rem; border-radius: var(--dl-radius-md); font-weight: 600; color: var(--dl-color-text); background: var(--dl-color-surface); }
 
 .btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }

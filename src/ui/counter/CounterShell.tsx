@@ -1,6 +1,7 @@
 // F-05 / F-43 Counter shell: top tabs New Orders | Open Orders (Q-ORDERS-1), then for New Orders the page tabs
 // (Menu / Billing / Payment) and a single current-order line (Q-ORDERS-2 A: no chips row). Interaction owner for the header (§5).
 import { CONFIG } from '../../config';
+import type { Order } from '../../contract';
 import { bill, draftOrders, formatToken, isOpen, kitchen, liveOrders, orderStatus, unpaidOrders, useApp, type Page } from '../../store';
 import { Icon } from '../kit/Icon';
 import { useWide } from '../kit/useWide';
@@ -22,19 +23,35 @@ function TopTabs() {
   const n = useApp((st) => kitchen.openOrders(liveOrders(st.folded)).length);
   const u = useApp((st) => unpaidOrders(liveOrders(st.folded)).length);
   const o = useApp((st) => st.open);
-  const T = (id: 'new' | 'open' | 'unpaid', label: string, badge: React.ReactNode) => (
-    <button type="button" role="tab" aria-selected={tab === id} className={tab === id ? s.segOn : s.segBtn} onClick={() => { o.showTab(id); }}>{label}{badge}</button>
+  const T = (id: 'new' | 'open' | 'unpaid', full: string, short: string, badge: React.ReactNode) => (
+    <button type="button" role="tab" aria-selected={tab === id} className={tab === id ? s.segOn : s.segBtn} onClick={() => { o.showTab(id); }}>
+      <span className={s.tabFull}>{full}</span>
+      <span className={s.tabShort}>{short}</span>
+      {badge}
+    </button>
   );
   return (
     <div className={s.seg} role="tablist" aria-label="Counter" style={{ '--n': 3 } as React.CSSProperties}>
-      {T('new', 'New Orders', null)}
-      {T('open', 'Open Orders', n > 0 ? <i className={s.badge}>{n}</i> : null)}
-      {T('unpaid', 'Unpaid', u > 0 ? <i className={s.badgeRed}>{u}</i> : null)}
+      {T('new', 'New Orders', 'New', null)}
+      {T('open', 'Open Orders', 'Open', n > 0 ? <i className={s.badge}>{n}</i> : null)}
+      {T('unpaid', 'Unpaid', 'Unpaid', u > 0 ? <i className={s.badgeRed}>{u}</i> : null)}
     </div>
   );
 }
 
-/** Q-ORDERS-2 A: one quiet line for the order being built, instead of the chips row. */
+function OrderRibbon({ orders, curId, onSelect }: { orders: readonly Order[]; curId: string; onSelect: (id: string) => void }) {
+  return (
+    <div className={s.orderRibbon} role="tablist" aria-label="Quick order switcher">
+      {orders.map((order) => (
+        <button type="button" key={order.id} role="tab" aria-selected={order.id === curId} className={order.id === curId ? s.ribbonOn : s.ribbonBtn} onClick={() => { onSelect(order.id); }}>
+          {formatToken(order.token, CONFIG.tokens.pad)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Q-ORDERS-2 A: one quiet line for the order being built, with fast cycling and multi-order ribbon. */
 function CurrentLine() {
   const c = useApp((st) => st.counter);
   const o = useApp((st) => (st.ui.orderId ? st.folded.orders[st.ui.orderId] : undefined));
@@ -49,16 +66,19 @@ function CurrentLine() {
   const next = hasMultiple ? allOpen[(idx + 1) % allOpen.length] : null;
   return (
     <div className={s.cur}>
-      {hasMultiple && prev && next ? (
-        <span className={s.orderCycle} role="group" aria-label="Order cycling">
-          <button type="button" className={s.cycleBtn} aria-label={`Previous order ${formatToken(prev.token, CONFIG.tokens.pad)}`} onClick={() => { c.selectOrder(prev.id); }}>‹</button>
-          <b className={s.curToken}>{formatToken(o.token, CONFIG.tokens.pad)}</b>
-          <span className={s.cycleDot}>·</span>
-          <button type="button" className={s.cycleTokenBtn} aria-label={`Switch to order ${formatToken(next.token, CONFIG.tokens.pad)}`} onClick={() => { c.selectOrder(next.id); }}>{formatToken(next.token, CONFIG.tokens.pad)}</button>
-          <button type="button" className={s.cycleBtn} aria-label={`Next order ${formatToken(next.token, CONFIG.tokens.pad)}`} onClick={() => { c.selectOrder(next.id); }}>›</button>
-        </span>
-      ) : <b>{formatToken(o.token, CONFIG.tokens.pad)}</b>}
-      <span className={s.curMeta}>{` · ${status === 'New' || status === 'Editing' ? 'new order' : status.toLowerCase()} · ${String(n)} ${n === 1 ? 'item' : 'items'}`}</span>
+      <div className={s.curLeft}>
+        {hasMultiple && prev && next ? (
+          <span className={s.orderCycle} role="group" aria-label="Order cycling">
+            <button type="button" className={s.cycleBtn} aria-label={`Previous order ${formatToken(prev.token, CONFIG.tokens.pad)}`} onClick={() => { c.selectOrder(prev.id); }}>‹</button>
+            <b className={s.curToken}>{formatToken(o.token, CONFIG.tokens.pad)}</b>
+            <span className={s.cycleDot}>·</span>
+            <button type="button" className={s.cycleTokenBtn} aria-label={`Switch to order ${formatToken(next.token, CONFIG.tokens.pad)}`} onClick={() => { c.selectOrder(next.id); }}>{formatToken(next.token, CONFIG.tokens.pad)}</button>
+            <button type="button" className={s.cycleBtn} aria-label={`Next order ${formatToken(next.token, CONFIG.tokens.pad)}`} onClick={() => { c.selectOrder(next.id); }}>›</button>
+          </span>
+        ) : <b className={s.curToken}>{formatToken(o.token, CONFIG.tokens.pad)}</b>}
+        <span className={s.curMeta}>{` · ${status === 'New' || status === 'Editing' ? 'new order' : status.toLowerCase()} · ${String(n)} ${n === 1 ? 'item' : 'items'}`}</span>
+      </div>
+      {hasMultiple ? <OrderRibbon orders={allOpen} curId={o.id} onSelect={(id) => { c.selectOrder(id); }} /> : null}
     </div>
   );
 }

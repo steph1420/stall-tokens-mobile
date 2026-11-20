@@ -13,6 +13,8 @@ function useSlipText(o: Order, draftTip?: Paise, draftWaived?: Paise): SlipText 
   const cash = o.payments.reduce((t, p) => t + p.cash, 0); const upi = o.payments.reduce((t, p) => t + p.upi, 0);
   const effTip = draftTip !== undefined ? draftTip : bill.tips(o);
   const effWaived = draftWaived !== undefined ? draftWaived : bill.waived(o);
+  const owed = bill.due(o);
+  const isUnpaid = owed > 0;
   return {
     stall, token: formatToken(o.token, CONFIG.tokens.pad),
     meta: `${istClock(o.payments[0]?.at ?? o.createdAt)}${o.client ? ` · ${o.client}` : ''}`,
@@ -20,7 +22,9 @@ function useSlipText(o: Order, draftTip?: Paise, draftWaived?: Paise): SlipText 
     lines: [...o.lines.filter((l) => l.qty > 0).map((l) => [`${l.name}${l.qty > 1 ? ` ×${String(l.qty)}` : ''}`, formatInr(l.price * l.qty)] as const),
       ...(effTip > 0 ? [['Tip', `+${formatInr(effTip)}`] as const] : []), ...(effWaived > 0 ? [['Waived', `−${formatInr(effWaived)}`] as const] : [])],
     total: formatInr(bill.total(o) + effTip - effWaived),
-    paid: cash && upi ? 'Paid · cash + UPI' : upi ? 'Paid · UPI' : cash ? 'Paid · cash' : 'Not paid yet',
+    paid: cash && upi ? 'Paid · cash + UPI' : upi ? 'Paid · UPI' : cash ? 'Paid · cash' : isUnpaid ? `UNPAID · Please pay ${formatInr(owed)}` : 'Paid',
+    unpaid: isUnpaid,
+    due: isUnpaid ? formatInr(owed) : undefined,
   };
 }
 
@@ -31,11 +35,17 @@ export function SlipBody({ o, tip, waived }: { o: Order; tip?: Paise | undefined
       <div className={s.stall}>{t.stall}</div>
       <div className={s.tokLab}>Token</div>
       <div className={s.tok}>{t.token}</div>
+      {t.unpaid ? (
+        <div className={s.unpaidBadge} role="status" aria-label="Unpaid order">
+          <div className={s.unpaidTitle}>*** UNPAID ***</div>
+          <div className={s.unpaidSub}>{t.due ? `Please pay ${t.due} at the counter` : 'Please pay at the counter'}</div>
+        </div>
+      ) : null}
       <div className={s.meta}>{t.meta}</div>
       <ul className={s.lines}>{t.lines.map(([l, r], i) => <li key={`${String(i)}${l}`}><span>{l}</span><span>{r}</span></li>)}</ul>
       <div className={s.total}><span>Total</span><span>{t.total}</span></div>
-      <div className={s.meta}>{t.paid}</div>
-      <div className={s.foot}>Show this at pickup</div>
+      <div className={t.unpaid ? s.paidWarn : s.meta}>{t.paid}</div>
+      <div className={t.unpaid ? s.footWarn : s.foot}>{t.unpaid ? 'Please pay at the counter' : 'Show this at pickup'}</div>
     </div>
   );
 }

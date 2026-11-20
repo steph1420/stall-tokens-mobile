@@ -3,10 +3,29 @@ import type { Order } from '../../contract';
 
 export interface Range { readonly from: number; readonly to: number }
 
-/** Next token in this device's range for the day; wraps to the start if the range is used up. Deleted orders release their token. */
+/** Next token in this device's range for the day; wraps to the start if the range is used up.
+ * Deleted and cancelled orders release their token number back to the pool so it is immediately reused. */
 export function nextToken(orders: readonly Order[], dayId: string, range: Range): number {
   let max = range.from - 1;
-  for (const o of orders) if (!o.deleted && o.dayId === dayId && o.token >= range.from && o.token <= range.to && o.token > max) max = o.token;
+  const used = new Set<number>();
+  const released = new Set<number>();
+
+  for (const o of orders) {
+    if (o.dayId !== dayId || o.token < range.from || o.token > range.to) continue;
+    if (o.deleted || o.cancel) {
+      released.add(o.token);
+    } else {
+      used.add(o.token);
+      max = Math.max(max, o.token);
+    }
+  }
+
+  for (const t of used) released.delete(t);
+  if (released.size > 0) {
+    const min = Math.min(...released);
+    if (min >= range.from && min <= range.to) return min;
+  }
+
   return max + 1 > range.to ? range.from : max + 1;
 }
 

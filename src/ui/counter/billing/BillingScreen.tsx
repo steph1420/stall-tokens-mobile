@@ -112,22 +112,34 @@ function Actions({ o }: { o: Order }) {
   const hasDraft = lines.some((l) => l.status === 'draft');
   const settled = owed === 0 && bill.paid(o) + bill.waived(o) > 0;
   const pay = () => { if (owed < 0) openSheet({ kind: 'refund' }); else c.setPage('payment'); };
+  const sendKitchen = () => {
+    if (c.sendToKitchen()) {
+      c.toast('Sent to the kitchen');
+      openSheet({ kind: 'slip', orderId: o.id });
+    }
+  };
   return (
     <footer className={s.actions}>
-        <div className={s.row}>
-          <button type="button" className={s.back} onClick={() => { c.setPage('menu'); }}><Icon name="back" className={s.ic} />Back</button>
-          <HoldButton className={s.del} label="Delete" onConfirm={() => { c.deleteOrder(); }} onHint={() => { c.toast('Hold to delete this order'); }}>
-            <Icon name="trash" className={s.ic} />Delete
-          </HoldButton>
-          <button type="button" className={s.kitchen} disabled={!hasDraft} onClick={() => { if (c.sendToKitchen()) c.toast('Sent to the kitchen'); }}>
-            {hasDraft || !o.sent ? 'To kitchen' : 'In kitchen'}
+      <div className={s.row}>
+        <button type="button" className={s.back} onClick={() => { c.setPage('menu'); }}><Icon name="back" className={s.ic} />Back</button>
+        <HoldButton className={s.del} label="Delete" onConfirm={() => { c.deleteOrder(); }} onHint={() => { c.toast('Hold to delete this order'); }}>
+          <Icon name="trash" className={s.ic} />Delete
+        </HoldButton>
+        {hasDraft || !o.sent ? (
+          <button type="button" className={s.kitchen} disabled={!hasDraft} onClick={sendKitchen}>
+            To kitchen
           </button>
-          <button type="button" className={s.pay} disabled={lines.length === 0 || (settled && !hasDraft)} onClick={pay}>
-            {owed < 0 ? <>Refund <Money p={-owed} /></> : settled ? 'Paid ✓' : 'Pay'}
+        ) : (
+          <button type="button" className={s.kitchen} onClick={() => { openSheet({ kind: 'slip', orderId: o.id }); }} aria-label="Print token slip">
+            <Icon name="printer" className={s.ic} />Print token
           </button>
-        </div>
-        <p className={s.hint}>Pay sends it to the kitchen too</p>
-      </footer>
+        )}
+        <button type="button" className={s.pay} disabled={lines.length === 0 || (settled && !hasDraft)} onClick={pay}>
+          {owed < 0 ? <>Refund <Money p={-owed} /></> : settled ? 'Paid ✓' : 'Pay'}
+        </button>
+      </div>
+      <p className={s.hint}>Pay sends it to the kitchen too</p>
+    </footer>
   );
 }
 
@@ -137,7 +149,14 @@ function MetaRow({ o }: { o: Order }) {
   const openSheet = useApp((st) => st.openSheet);
   return (
     <div className={s.meta}>
-      <span>Token <b>{formatToken(o.token, CONFIG.tokens.pad)}</b></span>
+      <span className={s.metaToken}>
+        Token <b>{formatToken(o.token, CONFIG.tokens.pad)}</b>
+        {o.sent ? (
+          <button type="button" className={s.printMetaBtn} onClick={() => { openSheet({ kind: 'slip', orderId: o.id }); }} aria-label="Print token slip" title="Print token">
+            <Icon name="printer" className={s.printMetaIc} />Print
+          </button>
+        ) : null}
+      </span>
       {/* F-19 Q-PRIORITY-1 C: the Counter can mark Priority too (the kitchen holds the order number). */}
       <button type="button" role="switch" aria-checked={o.priority} className={o.priority ? s.prioOn : s.prio} onClick={() => { k.togglePriority(o.id); }}>
         <Icon name="stPriority" className={s.prioIc} />Priority
