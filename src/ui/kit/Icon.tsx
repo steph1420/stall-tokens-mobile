@@ -25,6 +25,7 @@ const ICONS = {
   sandwiches: <svg viewBox="0 0 24 24" {...P} strokeWidth="1.6"><path d="M3 15L12 5l9 10z" /><path d="M4 18h16" /></svg>,
   cutlets: <svg viewBox="0 0 24 24" {...P} strokeWidth="1.6"><ellipse cx="12" cy="12" rx="8.5" ry="6" /><path d="M8 11h1M12 9.5h1M15 12h1M10 14h1" /></svg>,
   all: <svg viewBox="0 0 24 24" {...P} strokeWidth="1.6"><rect x="4" y="4" width="7" height="7" rx="2" /><rect x="13" y="4" width="7" height="7" rx="2" /><rect x="4" y="13" width="7" height="7" rx="2" /><rect x="13" y="13" width="7" height="7" rx="2" /></svg>,
+  home: <svg viewBox="0 0 24 24" {...P} strokeWidth="1.8"><path d="M3 10.5 12 3l9 7.5V20a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20v-9.5z" /><path d="M9 21.5V12h6v9.5" /></svg>,
   open: <svg viewBox="0 0 16 16" {...P} strokeWidth="1.6"><path d="M3 8h10M9 4l4 4-4 4" /></svg>,
   chevLeft: <svg viewBox="0 0 24 24" {...P} strokeWidth="1.8"><path d="M15 5 8 12l7 7" /></svg>,
   stWaiting: <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2.35" /><circle cx="12" cy="12" r="2.35" /><circle cx="19" cy="12" r="2.35" /></svg>,

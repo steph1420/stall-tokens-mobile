@@ -13,6 +13,7 @@ import s from './Stall.module.css';
 import { Group, Opt, nextOpt } from './settings/Opt';
 import { GeneralSettings } from './settings/GeneralSettings';
 import { DisplaySettings } from './settings/DisplaySettings';
+import { PrinterSettings } from './settings/PrinterSettings';
 import { CategoriesRow } from './settings/CategoriesSettings';
 import { StationsRow } from './settings/StationsSettings';
 import { DataSettings } from './settings/DataSettings';
@@ -20,22 +21,22 @@ import { AboutSettings } from './settings/AboutSettings';
 
 const LOOKS = { full: 'Full card', items: 'Item cards', ticket: 'Ticket' } as const;
 
-/** F-35 Sync: the Sheet bridge URL and stall key for this phone. Saving restarts the app to connect. */
+/** F-35 Sync: direct Google Sheet bridge URL. Saving restarts the app to connect. */
 function SyncSheet({ onClose }: { onClose: () => void }) {
   const a = useApp((x) => x);
   const [url, setUrl] = useState(a.prefs.syncUrl);
   const [key, setKey] = useState(a.prefs.syncKey);
   const bad = url.trim() !== '' && !isSheetUrl(url);
-  const save = () => { a.setPrefs({ syncUrl: url.trim(), syncKey: key.trim() }); window.location.reload(); };
+  const save = () => { a.setPrefs({ syncUrl: url.trim(), syncKey: key.trim() || 'stall' }); window.location.reload(); };
 
   return (
-    <Sheet title="Sync with the Sheet" onClose={onClose}>
+    <Sheet title="Sync with Google Sheet" onClose={onClose}>
       <div className={s.syncForm}>
-        <p className={s.syncHint}>Paste the web-app link (ends in /exec) and the stall key from the Sheet setup. Leave empty to keep this phone local.</p>
+        <p className={s.syncHint}>Paste your Google Apps Script web-app link (ends in /exec). No pairing or complex keys needed.</p>
         <input className={kit.input} aria-label="Web-app link" placeholder="https://script.google.com/macros/s/…/exec" autoCapitalize="off" autoCorrect="off" value={url} onChange={(e) => { setUrl(e.target.value); }} />
-        <input className={kit.input} aria-label="Stall key" placeholder="Stall key" autoCapitalize="off" autoCorrect="off" value={key} onChange={(e) => { setKey(e.target.value); }} />
+        <input className={kit.input} aria-label="Stall key (optional)" placeholder="Stall key (optional, default: stall)" autoCapitalize="off" autoCorrect="off" value={key} onChange={(e) => { setKey(e.target.value); }} />
         {bad ? <p className={s.warn}>That link does not look right · it should start with https://</p> : null}
-        <button type="button" className={kit.cta} disabled={bad || (url.trim() !== '' && !key.trim())} onClick={save}>Save and reconnect</button>
+        <button type="button" className={kit.cta} disabled={bad} onClick={save}>Save and connect</button>
       </div>
     </Sheet>
   );
@@ -120,6 +121,7 @@ export function SettingsScreen() {
   return (
     <StallPage title="Settings">
       <GeneralSettings />
+      <PrinterSettings />
       <DisplaySettings />
       <Group label="Menu"><CategoriesRow /><StationsRow /></Group>
       <KitchenSettingsGroup />

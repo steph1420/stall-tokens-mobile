@@ -1,13 +1,22 @@
 // Every Counter sheet, one owner (ARCHITECTURE §5). F-07 item, F-08 stock, F-09 notes, F-10/F-11 adjust, F-15 payees, F-18 refund, F-37 more.
 import { useState } from 'react';
 import { CONFIG } from '../../config';
-import { formatInr, parseRupees, type Order, type Paise } from '../../contract';
+import { formatInr, parseAddons, parseRupees, parseVariants, type Item, type Order, type Paise } from '../../contract';
 import { amounts, bill, useApp } from '../../store';
 import { AmountsEdit } from '../kit/AmountsEdit';
 import { Money } from '../kit/Money';
 import { Sheet } from '../kit/Sheet';
 import k from '../kit/kit.module.css';
 import { StallNav } from '../stall/StallNav';
+import { CustomizeItemSheet } from './CustomizeItemSheet';
+import {
+  ItemAddonsSection,
+  ItemDiscountSection,
+  ItemUnitsSection,
+  ItemVariantsSection,
+  validateDraftOptions,
+  type DraftOption,
+} from './ItemEditorSections';
 import { DraftsSheet, NewDaySheet, RefundLinesSheet, SlipSheet } from './P2Sheets';
 
 const R = CONFIG.money.paisePerRupee;
@@ -57,29 +66,21 @@ function CategoryPick({ value, cats, onPick }: { value: string; cats: readonly s
   );
 }
 
-function ItemSheet({ itemId }: { itemId: string | null }) {
-  const close = useClose();
-  const it = useApp((st) => (itemId ? st.folded.items[itemId] : undefined));
-  const cats = useApp((st) => [...new Set(Object.values(st.folded.items).filter((i) => !i.removed && !i.supply).map((i) => i.category).filter(Boolean))]);
-  const cat = useApp((st) => st.catalog);
-  const stationFor = useStationFor();
-  const [name, setName] = useState(it?.name ?? '');
-  const [price, setPrice] = useState(it ? String(it.price / R) : '');
-  const [swatch, setSwatch] = useState(it?.swatch ?? 0);
-  const [category, setCategory] = useState(it?.category ?? cats[0] ?? '');
-  const [station, setStation] = useState(it?.stationId ?? CONFIG.stations[0]);
-  const [count, setCount] = useState(it?.count == null ? '' : String(it.count));
-  const [err, setErr] = useState('');
-  const save = () => {
-    const p = parseRupees(price);
-    if (p === null) { setErr('Check the price'); return; }
-    const n = count.trim() === '' ? null : Number(count);
-    if (n !== null && !Number.isSafeInteger(n)) { setErr('Stock must be a whole number'); return; }
-    const e = cat.saveItem(itemId, { name, price: p, swatch, category, stationId: station, count: n });
-    if (e) setErr(e); else close();
-  };
+function ItemBasicFields({
+  name, setName, price, setPrice, swatch, setSwatch, category, setCategory, cats, station, setStation, count, setCount, it, stationFor,
+}: {
+  name: string; setName: (v: string) => void;
+  price: string; setPrice: (v: string) => void;
+  swatch: number; setSwatch: (v: number) => void;
+  category: string; setCategory: (v: string) => void;
+  cats: readonly string[];
+  station: string; setStation: (v: string) => void;
+  count: string; setCount: (v: string) => void;
+  it: Item | undefined;
+  stationFor: (c: string) => string | undefined;
+}) {
   return (
-    <Sheet title={it ? 'Edit item' : 'Add item'} onClose={close}>
+    <>
       <Field id="iname" label="Name"><input id="iname" className={k.input} value={name} maxLength={CONFIG.limits.nameMaxChars} onChange={(e) => { setName(e.target.value); }} autoComplete="off" /></Field>
       <Field id="iprice" label="Price (₹)"><input id="iprice" className={k.input} value={price} inputMode="decimal" onChange={(e) => { setPrice(e.target.value); }} /></Field>
       <Swatches value={swatch} onPick={setSwatch} />
@@ -87,7 +88,67 @@ function ItemSheet({ itemId }: { itemId: string | null }) {
       <Field id="istation" label="Station"><select id="istation" className={k.input} value={station} onChange={(e) => { setStation(e.target.value); }}>
         {CONFIG.stations.map((x) => <option key={x} value={x}>{x}</option>)}</select></Field>
       <Field id="icount" label="Stock (leave empty for no count)"><input id="icount" className={k.input} value={count} inputMode="numeric" onChange={(e) => { setCount(e.target.value.replace(/[^\d]/g, '')); }} /></Field>
-      {err ? <div className={k.err} role="alert">{err}</div> : null}
+    </>
+  );
+}
+
+function useItemState(it: Item | undefined, cats: readonly string[]) {
+  const [name, setName] = useState(it?.name ?? '');
+  const [price, setPrice] = useState(it ? String(it.price / R) : '');
+  const [swatch, setSwatch] = useState(it?.swatch ?? 0);
+  const [category, setCategory] = useState(it?.category ?? cats[0] ?? '');
+  const [station, setStation] = useState(it?.stationId ?? CONFIG.stations[0]);
+  const [count, setCount] = useState(it?.count == null ? '' : String(it.count));
+  const [unit, setUnit] = useState(it?.unit ?? '');
+  const [secUnit, setSecUnit] = useState(it?.secondaryUnit ?? '');
+  const [multiplier, setMultiplier] = useState(it?.unitMultiplier ? String(it.unitMultiplier) : '');
+  const [discountPct, setDiscountPct] = useState(it?.discountPct ? String(it.discountPct) : '');
+  const [variants, setVariants] = useState<readonly DraftOption[]>(() => (it ? parseVariants(it).map((v, i) => ({ id: v.id ?? String(i), name: v.name, price: String(v.price / R) })) : []));
+  const [addons, setAddons] = useState<readonly DraftOption[]>(() => (it ? parseAddons(it).map((a, i) => ({ id: a.id ?? String(i), name: a.name, price: String(a.price / R) })) : []));
+  const [err, setErr] = useState('');
+
+  return {
+    name, setName, price, setPrice, swatch, setSwatch, category, setCategory, station, setStation, count, setCount,
+    unit, setUnit, secUnit, setSecUnit, multiplier, setMultiplier, discountPct, setDiscountPct, variants, setVariants, addons, setAddons, err, setErr,
+  };
+}
+
+function serializeOptions(options: readonly DraftOption[]) {
+  return JSON.stringify(options.map((o) => ({ id: o.id, name: o.name.trim(), price: parseRupees(o.price) ?? 0 })).filter((o) => o.name));
+}
+
+function ItemSheet({ itemId }: { itemId: string | null }) {
+  const close = useClose();
+  const it = useApp((st) => (itemId ? st.folded.items[itemId] : undefined));
+  const cats = useApp((st) => [...new Set(Object.values(st.folded.items).filter((i) => !i.removed && !i.supply).map((i) => i.category).filter(Boolean))]);
+  const cat = useApp((st) => st.catalog);
+  const stationFor = useStationFor();
+  const s = useItemState(it, cats);
+
+  const save = () => {
+    const p = parseRupees(s.price);
+    if (p === null) { s.setErr('Check the price'); return; }
+    const vErr = validateDraftOptions(s.variants); if (vErr) { s.setErr(vErr); return; }
+    const aErr = validateDraftOptions(s.addons); if (aErr) { s.setErr(aErr); return; }
+    const n = s.count.trim() === '' ? null : Number(s.count);
+    if (n !== null && !Number.isSafeInteger(n)) { s.setErr('Stock must be a whole number'); return; }
+    const e = cat.saveItem(itemId, {
+      name: s.name, price: p, swatch: s.swatch, category: s.category, stationId: s.station, count: n,
+      unit: s.unit.trim(), secondaryUnit: s.secUnit.trim(), unitMultiplier: Number(s.multiplier) || 1,
+      discountPct: Math.max(0, Math.min(100, Number(s.discountPct) || 0)),
+      variants: serializeOptions(s.variants), addons: serializeOptions(s.addons),
+    });
+    if (e) s.setErr(e); else close();
+  };
+
+  return (
+    <Sheet title={it ? 'Edit item' : 'Add item'} onClose={close}>
+      <ItemBasicFields {...s} it={it} cats={cats} stationFor={stationFor} />
+      <ItemUnitsSection unit={s.unit} secondaryUnit={s.secUnit} unitMultiplier={s.multiplier} onUnit={s.setUnit} onSecondaryUnit={s.setSecUnit} onMultiplier={s.setMultiplier} />
+      <ItemDiscountSection discountPct={s.discountPct} onDiscount={s.setDiscountPct} />
+      <ItemVariantsSection variants={s.variants} onChange={s.setVariants} />
+      <ItemAddonsSection addons={s.addons} onChange={s.setAddons} />
+      {s.err ? <div className={k.err} role="alert">{s.err}</div> : null}
       <div className={k.row}>
         {it ? <button type="button" className={k.danger} onClick={() => { cat.removeItem(it.id); close(); }}>Remove</button> : null}
         <span className={k.grow} />
@@ -349,9 +410,11 @@ function MoreSheet() {
 
 export function CounterSheets() {
   const sheet = useApp((st) => st.ui.sheet);
+  const openSheet = useApp((st) => st.openSheet);
   if (!sheet) return null;
   switch (sheet.kind) {
     case 'item': return <ItemSheet key={sheet.itemId ?? 'new'} itemId={sheet.itemId} />;
+    case 'customizeItem': return <CustomizeItemSheet key={sheet.itemId} itemId={sheet.itemId} onClose={() => { openSheet(null); }} />;
     case 'stock': return <StockSheet itemId={sheet.itemId} />;
     case 'lineNote': return <NoteSheet key={sheet.lineId} lineId={sheet.lineId} />;
     case 'orderNote': return <NoteSheet lineId={null} />;

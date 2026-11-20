@@ -5,7 +5,15 @@ import type { Core, Log } from './core';
 import { isUpiId } from './rules/upi';
 import * as amounts from './rules/amounts';
 
-export type ItemDraft = Pick<ItemFields, 'name' | 'price' | 'swatch' | 'category' | 'stationId'> & { count: number | null };
+export type ItemDraft = Pick<ItemFields, 'name' | 'price' | 'swatch' | 'category' | 'stationId'> & {
+  count: number | null;
+  unit?: string | undefined;
+  secondaryUnit?: string | undefined;
+  unitMultiplier?: number | undefined;
+  discountPct?: number | undefined;
+  variants?: string | undefined;
+  addons?: string | undefined;
+};
 
 function itemActions(core: Core, log: Log) {
   const st = () => core.get();
@@ -21,8 +29,19 @@ function itemActions(core: Core, log: Log) {
       const order = itemId ? undefined : items.reduce((m, i) => Math.max(m, i.order), 0) + 1;
       const id = itemId ?? core.env.makeId();
       const swatch = Math.abs(Math.trunc(d.swatch)) % CONFIG.swatchCount;
-      log.dispatch('item.set', { itemId: id, fields: { name, price: d.price, swatch, category: d.category.trim(), stationId: d.stationId, count: d.count,
-        ...(order === undefined ? {} : { order, lowAt: CONFIG.stock.lowAtDefault }) } });
+      log.dispatch('item.set', {
+        itemId: id,
+        fields: {
+          name, price: d.price, swatch, category: d.category.trim(), stationId: d.stationId, count: d.count,
+          unit: d.unit ?? '',
+          secondaryUnit: d.secondaryUnit ?? '',
+          unitMultiplier: d.unitMultiplier ?? 1,
+          discountPct: d.discountPct ?? 0,
+          variants: d.variants ?? '',
+          addons: d.addons ?? '',
+          ...(order === undefined ? {} : { order, lowAt: CONFIG.stock.lowAtDefault }),
+        },
+      });
       return null;
     },
     removeItem(itemId: string) { log.dispatch('item.set', { itemId, fields: { removed: true } }); },
@@ -81,8 +100,8 @@ function payeeActions(core: Core, log: Log) {
       log.dispatch('payee.set', { payeeId: payeeId ?? core.env.makeId(), name: n, upiId: u, removed: false });
       return null;
     },
-    /** Shared stall settings (stall name). Trimmed and length-capped. */
-    setSetting(key: 'stallName', value: string) { log.dispatch('setting.set', { key, value: value.trim().replace(/\s+/g, ' ').slice(0, CONFIG.limits.nameMaxChars) }); },
+    /** Shared stall settings (stall name, event name, printer branding). Trimmed and length-capped. */
+    setSetting(key: string, value: string) { log.dispatch('setting.set', { key, value: value.trim().replace(/\s+/g, ' ').slice(0, CONFIG.limits.nameMaxChars) }); },
     /** F-45 tip choices / round-off steps for every phone: text in rupees; returns an error line or null. */
     setAmounts(key: amounts.AmountsKey, text: string): string | null {
       const r = amounts.parseRupees(text, key);

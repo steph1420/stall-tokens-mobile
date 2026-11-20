@@ -111,11 +111,13 @@ function PriorityBanner({ list, current }: { list: readonly Order[]; current: st
 function StationHeader({ station, count }: { station: string; count: number }) {
   const stallName = useApp((st) => st.folded.settings.stallName ?? 'Fair stall');
   const a = useApp((st) => st.kitchen);
+  const go = useApp((st) => st.go);
   const openSheet = useApp((st) => st.openSheet);
   return (
     <div className={k.hdr}>
       <div className={k.kicker}>{stallName}</div>
       <button type="button" className={k.back} aria-label="Back" onClick={() => { a.closeStation(); }}><Icon name="chevLeft" /></button>
+      <button type="button" className={k.homeBtn} aria-label="Home screen" title="Home screen" onClick={() => { go('launch'); }}><Icon name="home" /></button>
       <h1 className={s.title}><Icon name={stationIcon(station)} className={s.titleIc} /><span>{`${station} · ${String(count)}`}</span></h1>
       <button type="button" className={k.open} onClick={() => { openSheet({ kind: 'overview' }); }}>Overview</button>
     </div>

@@ -27,9 +27,36 @@ function CardStepper({ name, qty, onInc, onDec }: { name: string; qty: number; o
   );
 }
 
-function Card({ it }: { it: Item }) {
+function useCardPress(it: Item, hasCustom: boolean) {
   const c = useApp((st) => st.counter);
   const haptics = useApp((st) => st.prefs.haptics);
+  const openSheet = useApp((st) => st.openSheet);
+  return usePress(
+    () => {
+      buzz(haptics, 'tap');
+      if (hasCustom) openSheet({ kind: 'customizeItem', itemId: it.id });
+      else c.addItem(it.id);
+    },
+    () => { buzz(haptics, 'hold'); openSheet({ kind: 'stock', itemId: it.id }); }
+  );
+}
+
+function CardMid({ it, badge, note, hasCustom }: { it: Item; badge: ReturnType<typeof stockLabel>; note: string; hasCustom: boolean }) {
+  return (
+    <div className={s.cardMid}>
+      <div className={s.priceRow}>
+        <Money p={it.price} className={s.price} />
+        {it.discountPct > 0 ? <span className={s.discBadge}>{`${String(it.discountPct)}% off`}</span> : null}
+        {hasCustom ? <span className={s.optTag}>Options ›</span> : null}
+      </div>
+      {badge ? <div className={badge.tone === 'low' ? s.stockLow : badge.tone === 'out' ? s.stockOut : s.stock}>{badge.text}</div> : null}
+      {note ? <div className={s.snippet}>{note}</div> : null}
+    </div>
+  );
+}
+
+function Card({ it }: { it: Item }) {
+  const c = useApp((st) => st.counter);
   const openSheet = useApp((st) => st.openSheet);
   const lines = useApp((st) => (st.ui.orderId ? st.folded.orders[st.ui.orderId]?.lines : undefined)) ?? [];
   const mine = lines.filter((l) => l.itemId === it.id);
@@ -37,30 +64,25 @@ function Card({ it }: { it: Item }) {
   const note = [...mine].reverse().find((l) => l.status === 'draft' && l.note)?.note ?? mine.find((l) => l.note)?.note ?? '';
   const left = useApp((st) => (it.count === null ? Number.POSITIVE_INFINITY : st.counter.available(it.id)));
   const badge = stockLabel(it, left);
-  const press = usePress(
-    () => { buzz(haptics, 'tap'); c.addItem(it.id); },
-    () => { buzz(haptics, 'hold'); openSheet({ kind: 'stock', itemId: it.id }); }
-  );
+  const hasCustom = Boolean((it.variants && it.variants !== '[]' && it.variants.trim() !== '') || (it.addons && it.addons !== '[]' && it.addons.trim() !== ''));
+  const press = useCardPress(it, hasCustom);
   const noteLine = [...mine].reverse().find((l) => l.status === 'draft') ?? mine[mine.length - 1];
   const cls = [s.card, qty > 0 ? s.isIn : '', badge?.tone === 'out' ? s.isOut : ''].join(' ');
+
   return (
     <article className={cls} style={{ '--item-accent': `var(--dl-stall-swatch-${String(it.swatch)})` } as React.CSSProperties}>
       <div role="button" tabIndex={0} className={s.hit} aria-label={`${it.name}, add one${badge ? `, ${badge.text}` : ''}`} {...press} />
       <span className={s.accent} />
       <div className={s.cardTop}>
-        <div className={s.name}>{it.name}</div>
+        <div className={s.name}>{it.name}{it.unit ? <span className={s.unitTag}>{`/${it.unit}`}</span> : null}</div>
         {qty > 0 ? <span className={s.badgePill} aria-label={`${String(qty)} added`}>{qty}</span> : null}
       </div>
-      <div className={s.cardMid}>
-        <Money p={it.price} className={s.price} />
-        {badge && qty === 0 ? <div className={badge.tone === 'low' ? s.stockLow : badge.tone === 'out' ? s.stockOut : s.stock}>{badge.text}</div> : null}
-        {note ? <div className={s.snippet}>{note}</div> : null}
-      </div>
+      <CardMid it={it} badge={badge} note={note} hasCustom={hasCustom} />
       {qty > 0 && noteLine ? (
         <button type="button" className={note ? s.pencilHas : s.pencil} aria-label={note ? 'Edit note' : 'Add note'}
           onClick={(e) => { e.stopPropagation(); openSheet({ kind: 'lineNote', lineId: noteLine.lineId }); }}><Icon name="pencil" /></button>
       ) : null}
-      <CardStepper name={it.name} qty={qty} onInc={() => { c.addItem(it.id); }} onDec={() => { c.removeItem(it.id); }} />
+      <CardStepper name={it.name} qty={qty} onInc={() => { if (hasCustom) openSheet({ kind: 'customizeItem', itemId: it.id }); else c.addItem(it.id); }} onDec={() => { c.removeItem(it.id); }} />
     </article>
   );
 }
@@ -110,9 +132,15 @@ function SearchTools({ q, onQ, sort, onSort }: { q: string; onQ: (v: string) => 
   );
 }
 
-function CartDock({ subtotal, count, onBilling }: { subtotal: number; count: number; onBilling: () => void }) {
+function CartDock({ subtotal, count, onBilling, orderNote, onOrderNote }: {
+  subtotal: number; count: number; onBilling: () => void; orderNote: string; onOrderNote: () => void;
+}) {
   return (
     <footer className={s.bar}>
+      <button type="button" className={orderNote ? s.notePillHas : s.notePill} onClick={onOrderNote} aria-label={orderNote ? `Order note: ${orderNote}` : 'Add order note'}>
+        <Icon name="note" />
+        <span>{orderNote || 'Order note'}</span>
+      </button>
       <div className={s.meta}>
         <Money p={subtotal} className={s.total} />
         <span className={s.count}>{`· ${String(count)} ${count === 1 ? 'item' : 'items'}`}</span>
@@ -151,7 +179,13 @@ export function MenuScreen() {
           <span className={s.plus}><Icon name="plusBig" /></span><span className={s.addLabel}>Add item</span>
         </button>
       </main>
-      <CartDock subtotal={order ? bill.subtotal(order) : 0} count={count} onBilling={() => { c.setPage('billing'); }} />
+      <CartDock
+        subtotal={order ? bill.subtotal(order) : 0}
+        count={count}
+        orderNote={order?.note ?? ''}
+        onOrderNote={() => { openSheet({ kind: 'orderNote' }); }}
+        onBilling={() => { c.setPage('billing'); }}
+      />
     </>
   );
 }

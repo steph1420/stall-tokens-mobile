@@ -43,7 +43,7 @@ export function KitchenScreen() {
         <header className={s.chrome}>
           <div className={s.hdr}>
             <div className={s.kicker}>{stallName}</div>
-            <button type="button" className={s.back} aria-label="Back to start" onClick={() => { go('launch'); }}><Icon name="chevLeft" /></button>
+            <button type="button" className={s.homeBtn} aria-label="Home screen" title="Home screen" onClick={() => { go('launch'); }}><Icon name="home" /></button>
             <h1 className={s.title}>{`Kitchen · ${String(list.length)}`}</h1>
             {filter ? <button type="button" className={s.open} onClick={() => { k.openStation(filter, 'kitchen'); }}>Open {filter}<Icon name="open" className={s.openIc} /></button> : null}
           </div>

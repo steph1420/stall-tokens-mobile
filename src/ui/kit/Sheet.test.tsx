@@ -67,4 +67,27 @@ describe('Sheet component (FIND-UI-04)', () => {
     expect(document.activeElement).not.toBe(input);
     expect(document.activeElement).toBe(doneBtn);
   });
+
+  it('keeps focus on input while typing even if parent re-renders with a new onClose reference', () => {
+    let currentClose = () => {};
+    const { rerender } = render(
+      <Sheet title="Edit" onClose={currentClose}>
+        <input data-testid="type-input" />
+        <button type="button" data-testid="action-btn">Action</button>
+      </Sheet>
+    );
+    const input = screen.getByTestId('type-input');
+    input.focus();
+    expect(document.activeElement).toBe(input);
+
+    // Simulate keystroke causing parent re-render with new function reference
+    currentClose = () => {};
+    rerender(
+      <Sheet title="Edit" onClose={currentClose}>
+        <input data-testid="type-input" />
+        <button type="button" data-testid="action-btn">Action</button>
+      </Sheet>
+    );
+    expect(document.activeElement).toBe(input);
+  });
 });

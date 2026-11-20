@@ -11,6 +11,7 @@ export type CounterTab = 'new' | 'open' | 'unpaid';
 export interface StationPlace { readonly id: string; readonly from: 'kitchen' | 'launch'; readonly orderId: string | null }
 export type Sheet =
   | { kind: 'item'; itemId: string | null }
+  | { kind: 'customizeItem'; itemId: string }
   | { kind: 'stock'; itemId: string }
   | { kind: 'lineNote'; lineId: string }
   | { kind: 'orderNote' }

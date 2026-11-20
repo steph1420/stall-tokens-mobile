@@ -23,19 +23,21 @@ interface OptProps {
 function OptBody({ t, sub, value, onClick, sw, badge }: OptProps) {
   return (
     <>
-      <span className={s.rowMain}>
+      <span className={s.setMain}>
         <span className={s.setT}>{t}</span>
-        {sub ? <span className={s.rowS}>{sub}</span> : null}
+        {sub ? <span className={s.setS}>{sub}</span> : null}
       </span>
-      {badge ? <span>{badge}</span> : null}
-      {sw === undefined ? (
-        <>
-          <span className={onClick ? s.setV : s.setRo}>{value}</span>
-          {onClick ? <span aria-hidden="true" className={s.setRo}> ›</span> : null}
-        </>
-      ) : (
-        <span className={sw ? s.swOn : s.sw} aria-hidden="true"><span /></span>
-      )}
+      <span className={s.setEnd}>
+        {badge ? <span>{badge}</span> : null}
+        {sw === undefined ? (
+          <>
+            <span className={onClick ? s.setV : s.setRo}>{value}</span>
+            {onClick ? <span aria-hidden="true" className={s.setRo}> ›</span> : null}
+          </>
+        ) : (
+          <span className={sw ? s.swOn : s.sw} aria-hidden="true"><span /></span>
+        )}
+      </span>
     </>
   );
 }

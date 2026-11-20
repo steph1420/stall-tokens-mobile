@@ -6,7 +6,7 @@
   background: var(--dl-stall-chrome); backdrop-filter: blur(var(--dl-blur-chrome)) saturate(160%);
   border-bottom: var(--dl-stall-hair) solid color-mix(in srgb, var(--dl-color-hairline) 70%, transparent);
 }
-.hdrTop { display: flex; align-items: center; justify-content: space-between; padding: 0.25rem 0.5rem 0 1.25rem; min-height: 2.75rem; }
+.hdrTop { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.25rem 0.5rem 0; min-height: 2.75rem; }
 .hdr { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.375rem 0.5rem 0 1.25rem; }
 .kicker { font-size: 0.6875rem; line-height: 1rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dl-color-text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pages { display: flex; align-items: center; gap: 0.125rem; min-width: 0; }
@@ -15,11 +15,12 @@
 .ptabOn { composes: ptab; color: var(--dl-color-text-display); font-weight: 500; }
 .ptabOn::after { content: ""; position: absolute; left: 0.75rem; right: 0.75rem; bottom: 0.25rem; height: var(--dl-stall-hair-2); border-radius: var(--dl-stall-hair-2); background: var(--dl-color-accent); box-shadow: 0 0 0.5rem color-mix(in srgb, var(--dl-color-accent) 60%, transparent); }
 .ptabOn:first-child::after { left: 0; }
-.btnAdd, .btnMore { width: 2.75rem; height: 2.75rem; display: grid; place-items: center; user-select: none; touch-action: manipulation; }
-.btnAdd span, .btnMore span { width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; color: var(--dl-color-accent); background: color-mix(in srgb, var(--dl-color-accent) 10%, transparent); transition: transform var(--dl-dur-quick) cubic-bezier(0.2, 0.9, 0.4, 1), background var(--dl-dur-quick) ease; }
-.btnAdd:active span, .btnMore:active span { transform: scale(0.92); }
-.btnMore span { color: var(--dl-color-text-faint); background: transparent; }
-.btnAdd svg, .btnMore svg { width: 1rem; height: 1rem; display: block; }
+.btnAdd, .btnMore, .btnHome { width: 2.75rem; height: 2.75rem; display: grid; place-items: center; user-select: none; touch-action: manipulation; }
+.btnAdd span, .btnMore span, .btnHome span { width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; color: var(--dl-color-accent); background: color-mix(in srgb, var(--dl-color-accent) 10%, transparent); transition: transform var(--dl-dur-quick) cubic-bezier(0.2, 0.9, 0.4, 1), background var(--dl-dur-quick) ease; }
+.btnAdd:active span, .btnMore:active span, .btnHome:active span { transform: scale(0.92); }
+.btnMore span, .btnHome span { color: var(--dl-color-text-faint); background: transparent; }
+.btnHome:hover span, .btnHome:active span { color: var(--dl-stall-info-text); background: color-mix(in srgb, var(--dl-color-accent) 12%, transparent); }
+.btnAdd svg, .btnMore svg, .btnHome svg { width: 1.125rem; height: 1.125rem; display: block; }
 /* Q-ORDERS-1: the very top switch, New Orders | Open Orders (count badge). */
 .seg { display: grid; grid-template-columns: repeat(var(--n, 2), 1fr); gap: 0.125rem; margin: 0 1rem; padding: 0.1875rem; border-radius: var(--dl-radius-md); background: var(--dl-color-track); }
 .segBtn {

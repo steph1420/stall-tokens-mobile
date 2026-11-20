@@ -9,6 +9,12 @@ export interface SlipText {
   readonly paid: string;
   readonly unpaid?: boolean | undefined;
   readonly due?: string | undefined;
+  readonly welcomeNote?: string | undefined;
+  readonly eventName?: string | undefined;
+  readonly slogan?: string | undefined;
+  readonly contact?: string | undefined;
+  readonly address?: string | undefined;
+  readonly thankYou?: string | undefined;
 }
 
 const COLS = 32;
@@ -22,7 +28,12 @@ export function escposSlip(t: SlipText): Uint8Array {
   const cmd = (...b: number[]) => { out.push(...b); };
   const text = (s: string) => { for (const ch of ascii(s)) out.push(ch.charCodeAt(0)); out.push(0x0a); };
   cmd(ESC, 0x40); cmd(ESC, 0x61, 1);
+  if (t.welcomeNote) text(t.welcomeNote);
   cmd(ESC, 0x45, 1); text(t.stall); cmd(ESC, 0x45, 0);
+  if (t.eventName) text(t.eventName);
+  if (t.slogan) text(t.slogan);
+  if (t.address) text(t.address);
+  if (t.contact) text(`Contact: ${t.contact}`);
   text('TOKEN');
   cmd(GS, 0x21, 0x33); text(t.token); cmd(GS, 0x21, 0x00);
   if (t.unpaid) {
@@ -37,6 +48,7 @@ export function escposSlip(t: SlipText): Uint8Array {
   text('-'.repeat(COLS));
   cmd(ESC, 0x45, 1); text(pair('Total', t.total)); cmd(ESC, 0x45, 0);
   cmd(ESC, 0x61, 1); text(t.paid);
+  if (t.thankYou) text(t.thankYou);
   text(t.unpaid ? 'Please pay at the counter' : 'Show this at pickup');
   cmd(ESC, 0x64, 4); cmd(GS, 0x56, 0x42, 0x00);
   return Uint8Array.from(out);

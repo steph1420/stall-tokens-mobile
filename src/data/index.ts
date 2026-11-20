@@ -20,7 +20,7 @@ export { createFallbackOpStore } from './adapters/fallback';
 export { createSheetTransport, isSheetUrl, type SheetConfig } from './adapters/sheetTransport';
 export { createSyncStateStore } from './adapters/syncState';
 export { joinUrl, readJoin, isRole, type JoinLink } from './join';
-export { bluetoothPrint, canBluetoothPrint } from './adapters/btPrinter';
+export { bluetoothPrint, canBluetoothPrint, selectPrinter, getSavedPrinterName, disconnectPrinter, testPrinter } from './adapters/btPrinter';
 export { dropReceipt, getReceipt, putReceipt, receiptIds } from './adapters/receipts';
 export { backupFilename, createBackupData, computeOpLogHash, parseBackupJson, triggerFileDownload } from './adapters/backupFile';
 export { createIdbSnapshotsStore, createMemorySnapshotsStore } from './adapters/snapshots';
@@ -46,7 +46,7 @@ export function createBrowserDataSource(makeId: () => string, transports?: reado
   // A link opened in an already-open tab only changes the #fragment: apply it and restart the app.
   if (typeof window !== 'undefined') window.addEventListener('hashchange', () => { if (applyJoinFromLocation(device)) window.location.reload(); });
   const { syncUrl, syncKey } = device.read();
-  const sheet = isSheetUrl(syncUrl) && syncKey ? [createSheetTransport({ url: syncUrl, key: syncKey })] : [];
+  const sheet = isSheetUrl(syncUrl) ? [createSheetTransport({ url: syncUrl, key: syncKey || 'stall' })] : [];
   const snapshots = idb ? createIdbSnapshotsStore(idb) : createMemorySnapshotsStore();
   const syncState = createSyncStateStore(safeLocalStorage());
   return { ops: createFallbackOpStore(idb ? createLocalIdb(idb) : null), device, channel: createTabChannel(), transports: transports ?? sheet, snapshots, storageInfo: createBrowserStorageInfo(), syncState };

@@ -24,25 +24,30 @@ function trapFocus(e: KeyboardEvent, el: HTMLElement) {
 
 export function Sheet({ title, onClose, children, label }: { title?: string; label?: string; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     const el = ref.current;
     if (el) {
-      // Prefer focusing the first non-text-input element (e.g. button) to prevent mobile virtual keyboard auto-open.
-      // If no button exists, focus the dialog container itself.
-      const nonInput = el.querySelector<HTMLElement>('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])');
-      if (nonInput) {
-        nonInput.focus();
-      } else {
-        el.focus();
+      // Only set initial focus on mount if nothing inside is already focused.
+      // Crucial: never steal focus while the user is actively typing in an input/textarea!
+      if (!el.contains(document.activeElement)) {
+        const nonInput = el.querySelector<HTMLElement>('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])');
+        if (nonInput) {
+          nonInput.focus();
+        } else {
+          el.focus();
+        }
       }
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
       else if (el) trapFocus(e, el);
     };
     window.addEventListener('keydown', onKey);
     return () => { window.removeEventListener('keydown', onKey); };
-  }, [onClose]);
+  }, []); // Run on mount only
   const { y, handle } = useSheetDrag(onClose);
   return (
     <div className={s.sheetWrap}>

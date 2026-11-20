@@ -16,6 +16,18 @@ export interface EntryBody {
   personId: string | null;
 }
 
+export interface ItemVariant {
+  id?: string;
+  name: string;
+  price: Paise;
+}
+
+export interface ItemAddon {
+  id?: string;
+  name: string;
+  price: Paise;
+}
+
 export interface ItemFields {
   name: string; price: Paise; swatch: number; category: string; stationId: string;
   count: number | null; unit: string; lowAt: number; soldOut: boolean; order: number; removed: boolean;
@@ -23,6 +35,15 @@ export interface ItemFields {
   supply: boolean;
   /** P-3 A (2.1.0): category record id (`name:<text>` for a virtual one). '' = use the legacy `category` text. Additive. */
   categoryId: string;
+  /** Primary & Secondary units (e.g. Plate / Kg) */
+  secondaryUnit: string;
+  unitMultiplier: number;
+  /** Item-level discount percentage (0 to 100) */
+  discountPct: number;
+  /** JSON-stringified ItemVariant[] */
+  variants: string;
+  /** JSON-stringified ItemAddon[] */
+  addons: string;
 }
 /** Q-REFUND-1 A: one refunded line (qty of that line). */
 export interface RefundLine { lineId: string; qty: number }

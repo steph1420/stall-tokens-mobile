@@ -1,7 +1,11 @@
 /* F-42 Token slip: about 58 mm paper (48 mm printable). Paper colours from tokens; mm only, no px. */
 .preview { position: fixed; inset: 0; z-index: var(--dl-z-sheet); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; background: color-mix(in srgb, var(--dl-color-bg) 88%, transparent); }
 .slip { width: 58mm; padding: 4mm 5mm; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 3.2mm; line-height: 1.35; color: var(--dl-stall-paper-ink); background: var(--dl-stall-paper); box-shadow: var(--dl-color-shadow); }
+.welcome { text-align: center; font-size: 2.8mm; font-weight: 600; margin-bottom: 1mm; }
 .stall { text-align: center; font-weight: 700; font-size: 3.6mm; }
+.event { text-align: center; font-size: 3mm; font-weight: 600; }
+.slogan { text-align: center; font-size: 2.6mm; font-style: italic; }
+.contact { text-align: center; font-size: 2.6mm; }
 .tokLab { margin-top: 2mm; text-align: center; font-size: 2.8mm; letter-spacing: 0.3mm; text-transform: uppercase; }
 .tok { text-align: center; font-size: 16mm; font-weight: 800; line-height: 1; }
 .unpaidBadge {

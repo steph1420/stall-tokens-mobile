@@ -128,21 +128,36 @@ function dayActions(x: Ctx) {
   return self;
 }
 
+function validateQty(line: Line, qty: number, left: number, isEditable: boolean, toast: (s: string) => void): number | null {
+  const q = Math.max(0, Math.min(CONFIG.limits.qtyMax, Math.trunc(qty)));
+  if (q === line.qty) return null;
+  if (!isEditable && q < line.qty) { toast('Already being made; change it from the kitchen'); return null; }
+  if (q > line.qty && left < q - line.qty) {
+    toast(left <= 0 ? `${line.name} is sold out` : `Only ${String(left)} more ${line.name} left`);
+    return null;
+  }
+  return q;
+}
+
 function lineActions(x: Ctx, nav: Nav) {
   const { core, log, st, toast, current, available, editable } = x;
   const self = {
     /** Tap a menu card: +1 (F-06). */
     addItem(itemId: string) {
+      const it = st().folded.items[itemId];
+      if (it) self.addItemCustom(itemId, it.name, it.price);
+    },
+    addItemCustom(itemId: string, customName: string, customPrice: Paise) {
       if (x.locked()) return;
       const it = st().folded.items[itemId];
       if (!it || it.removed || it.supply) return;
       if (it.soldOut || available(itemId) < 1) { toast(`${it.name} is sold out`); return; }
       const o = current() ?? ensureOrder(x, nav);
       if (!o) { if (st().ui.sheet?.kind === 'newDay') x.ui({ pendingItem: itemId }); return; }
-      const draft = [...o.lines].reverse().find((l) => l.itemId === itemId && l.status === 'draft');
+      const draft = [...o.lines].reverse().find((l) => l.itemId === itemId && l.name === customName && l.status === 'draft');
       if (draft) { self.setQty(draft.lineId, draft.qty + 1); return; }
       if (o.lines.length >= CONFIG.limits.linesMax) { toast('This order is full; start another one'); return; }
-      log.dispatch('line.add', { orderId: o.id, lineId: core.env.makeId(), itemId, name: it.name, price: it.price, category: it.category, stationId: it.stationId, qty: 1 });
+      log.dispatch('line.add', { orderId: o.id, lineId: core.env.makeId(), itemId, name: customName, price: customPrice, category: it.category, stationId: it.stationId, qty: 1 });
     },
     /** Menu −: take one off the newest line of this item that is not being made yet. */
     removeItem(itemId: string) {
@@ -157,15 +172,8 @@ function lineActions(x: Ctx, nav: Nav) {
       const o = current();
       const line = o?.lines.find((l) => l.lineId === lineId);
       if (!o || !line) return;
-      const q = Math.max(0, Math.min(CONFIG.limits.qtyMax, Math.trunc(qty)));
-      if (q === line.qty) return;
-      if (!editable(line) && q < line.qty) { toast('Already being made; change it from the kitchen'); return; }
-      const left = available(line.itemId);
-      if (q > line.qty && left < q - line.qty) {
-        toast(left <= 0 ? `${line.name} is sold out` : `Only ${String(left)} more ${line.name} left`);
-        return;
-      }
-      log.dispatch('line.qty', { orderId: o.id, lineId, qty: q });
+      const q = validateQty(line, qty, available(line.itemId), editable(line), toast);
+      if (q !== null) log.dispatch('line.qty', { orderId: o.id, lineId, qty: q });
     },
   };
   return self;

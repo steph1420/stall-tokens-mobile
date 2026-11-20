@@ -39,7 +39,7 @@ export type { Split } from './rules/settle';
 export * as kitchen from './rules/kitchen';
 export type { Folded } from './fold/state';
 export type { DevicePrefs, SnapshotSummary, StorageEstimate } from '../data';
-export { isSheetUrl, joinUrl, readJoin, type JoinLink, bluetoothPrint, canBluetoothPrint, dropReceipt, getReceipt, putReceipt, receiptIds } from '../data';
+export { isSheetUrl, joinUrl, readJoin, type JoinLink, bluetoothPrint, canBluetoothPrint, selectPrinter, getSavedPrinterName, disconnectPrinter, testPrinter, dropReceipt, getReceipt, putReceipt, receiptIds } from '../data';
 export { escposSlip, type SlipText } from './rules/escpos';
 export type { OrderStatus, Page } from './rules/status';
 export * as bill from './rules/bill';

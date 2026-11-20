@@ -9,7 +9,8 @@ import { bill, bluetoothPrint, canBluetoothPrint, escposSlip, formatToken, istCl
 import s from './TokenSlip.module.css';
 
 function useSlipText(o: Order, draftTip?: Paise, draftWaived?: Paise): SlipText {
-  const stall = useApp((x) => x.folded.settings.stallName ?? 'Fair stall');
+  const set = useApp((x) => x.folded.settings);
+  const stall = set.stallName ?? 'Fair stall';
   const cash = o.payments.reduce((t, p) => t + p.cash, 0); const upi = o.payments.reduce((t, p) => t + p.upi, 0);
   const effTip = draftTip !== undefined ? draftTip : bill.tips(o);
   const effWaived = draftWaived !== undefined ? draftWaived : bill.waived(o);
@@ -18,6 +19,12 @@ function useSlipText(o: Order, draftTip?: Paise, draftWaived?: Paise): SlipText 
   return {
     stall, token: formatToken(o.token, CONFIG.tokens.pad),
     meta: `${istClock(o.payments[0]?.at ?? o.createdAt)}${o.client ? ` · ${o.client}` : ''}`,
+    welcomeNote: set.printerWelcome || undefined,
+    eventName: set.eventName || undefined,
+    slogan: set.printerSlogan || undefined,
+    contact: set.printerContact || undefined,
+    address: set.printerAddress || undefined,
+    thankYou: set.printerThankYou || undefined,
     // pay2: tip and waive are on the slip, and the total is what was asked for.
     lines: [...o.lines.filter((l) => l.qty > 0).map((l) => [`${l.name}${l.qty > 1 ? ` ×${String(l.qty)}` : ''}`, formatInr(l.price * l.qty)] as const),
       ...(effTip > 0 ? [['Tip', `+${formatInr(effTip)}`] as const] : []), ...(effWaived > 0 ? [['Waived', `−${formatInr(effWaived)}`] as const] : [])],
@@ -32,7 +39,12 @@ export function SlipBody({ o, tip, waived }: { o: Order; tip?: Paise | undefined
   const t = useSlipText(o, tip, waived);
   return (
     <div className={s.slip} aria-label="Token slip">
+      {t.welcomeNote ? <div className={s.welcome}>{t.welcomeNote}</div> : null}
       <div className={s.stall}>{t.stall}</div>
+      {t.eventName ? <div className={s.event}>{t.eventName}</div> : null}
+      {t.slogan ? <div className={s.slogan}>{t.slogan}</div> : null}
+      {t.address ? <div className={s.contact}>{t.address}</div> : null}
+      {t.contact ? <div className={s.contact}>{`Ph: ${t.contact}`}</div> : null}
       <div className={s.tokLab}>Token</div>
       <div className={s.tok}>{t.token}</div>
       {t.unpaid ? (
@@ -45,6 +57,7 @@ export function SlipBody({ o, tip, waived }: { o: Order; tip?: Paise | undefined
       <ul className={s.lines}>{t.lines.map(([l, r], i) => <li key={`${String(i)}${l}`}><span>{l}</span><span>{r}</span></li>)}</ul>
       <div className={s.total}><span>Total</span><span>{t.total}</span></div>
       <div className={t.unpaid ? s.paidWarn : s.meta}>{t.paid}</div>
+      {t.thankYou ? <div className={s.foot}>{t.thankYou}</div> : null}
       <div className={t.unpaid ? s.footWarn : s.foot}>{t.unpaid ? 'Please pay at the counter' : 'Show this at pickup'}</div>
     </div>
   );

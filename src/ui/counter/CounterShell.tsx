@@ -159,12 +159,14 @@ export function CounterShell() {
   const page = useApp((st) => (st.ui.orderId ? st.ui.pages[st.ui.orderId] : undefined) ?? 'menu');
   const stallName = useApp((st) => st.folded.settings.stallName ?? 'Fair stall');
   const openSheet = useApp((st) => st.openSheet);
+  const go = useApp((st) => st.go);
   const take = useTakeOver();
   const wide = useWide();
   return (
     <div className={wide ? s.wide : s.phone}>
       <header className={s.chrome}>
         <div className={s.hdrTop}>
+          <button type="button" className={s.btnHome} aria-label="Home screen" title="Home screen" onClick={() => { go('launch'); }}><Icon name="home" /></button>
           <div className={s.kicker}>{stallName}</div>
           <button type="button" className={s.btnMore} aria-label="More" onClick={() => { openSheet({ kind: 'more' }); }}><Icon name="more" /></button>
         </div>
